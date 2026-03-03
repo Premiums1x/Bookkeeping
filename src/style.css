@@ -1,0 +1,383 @@
+:root {
+  --bg-a: #eef2f6;
+  --bg-b: #f8fafc;
+  --phone-bg: #f3f4f8;
+  --text-main: #1f2937;
+  --text-sub: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text-main);
+  font-family: "MiSans", "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: radial-gradient(circle at 16% 0%, #fff 0%, var(--bg-a) 45%, var(--bg-b) 100%);
+}
+
+.scene {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.phone {
+  width: min(420px, 100%);
+  height: min(860px, 94vh);
+  background: var(--phone-bg);
+  border-radius: 28px;
+  box-shadow: 0 18px 45px rgba(35, 46, 67, 0.16);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  display: grid;
+  grid-template-columns: 94px 1fr 94px;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px 8px;
+}
+
+.month-picker {
+  justify-self: start;
+}
+
+.month-picker.el-date-editor.el-input {
+  width: 94px;
+}
+
+.month-picker .el-input__wrapper {
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px #dfe5ef inset;
+  background: #fff;
+}
+
+.month-picker .el-input__inner {
+  color: #334155;
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+}
+
+.month-picker .el-input__suffix {
+  color: #94a3b8;
+}
+
+.month-picker .el-input__prefix {
+  display: none;
+}
+
+.header-spacer {
+  justify-self: end;
+  width: 94px;
+  height: 34px;
+}
+
+.book-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.filter-row {
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.date-filter-tools {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.date-mode-select {
+  width: 96px;
+}
+
+.date-picker {
+  width: 142px;
+}
+
+.summary-card {
+  margin: 0 0 12px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px 12px;
+  box-shadow: 0 8px 18px rgba(18, 23, 34, 0.08);
+}
+
+.summary-label {
+  margin: 0;
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+.summary-main {
+  margin: 4px 0 8px;
+  text-align: center;
+  font-size: 46px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -1px;
+  font-family: "DIN Alternate", "Bahnschrift", "SF Pro Display", "MiSans", sans-serif;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.sub-label {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.sub-value {
+  margin: 2px 0 0;
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 16px 108px;
+  overflow: auto;
+}
+
+.loading-wrap {
+  padding: 10px 2px;
+}
+
+.records-list,
+.stats-list {
+  display: grid;
+  gap: 12px;
+}
+
+.day-group .el-card__header {
+  padding: 12px 14px;
+}
+
+.day-group .el-card__body {
+  padding: 0;
+}
+
+.day-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.day-title small {
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+.day-total {
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+
+.record-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 14px;
+  row-gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #edf0f6;
+}
+
+.record-item:first-child {
+  border-top: 0;
+}
+
+.record-meta {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.record-subline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.record-date {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.record-right {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+  min-width: 122px;
+}
+
+.record-meta h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 620;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.record-amount {
+  font-size: 17px;
+  font-weight: 700;
+  font-family: "DIN Alternate", "Bahnschrift", "SF Pro Display", "MiSans", sans-serif;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.record-amount.expense {
+  color: #111827;
+}
+
+.record-amount.income {
+  color: #0f9d58;
+}
+
+.record-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.record-actions .el-button {
+  width: 40px;
+  padding: 0;
+  min-height: 22px;
+  margin: 0;
+}
+
+.stats-wrap h2,
+.account-wrap h2 {
+  margin: 2px 0 10px;
+  font-size: 18px;
+}
+
+.stat-head {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.budget-action {
+  margin-top: 2px;
+}
+
+.budget-hint {
+  margin: 10px 0 0;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.tab-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 84px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid #e3e8f1;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+  justify-items: center;
+}
+
+.tab-item {
+  width: 100%;
+  max-width: 92px;
+  height: 42px;
+  border-radius: 999px;
+  border-color: #dce3ef;
+  background: #fff;
+  color: #617087;
+  font-weight: 600;
+}
+
+.tab-item.active {
+  border-color: #bfd8ff;
+  background: #eaf3ff;
+  color: #1d4ed8;
+}
+
+.add-item {
+  justify-self: center;
+  width: 54px;
+  min-width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #4ba3ff, #1d76f2);
+  color: #fff;
+  font-size: 35px;
+  line-height: 1;
+  margin-top: 0;
+  box-shadow: 0 10px 18px rgba(29, 118, 242, 0.35);
+}
+
+.tab-item.is-disabled,
+.tab-item:disabled {
+  opacity: 0.9;
+}
+
+.add-item:hover,
+.add-item:focus {
+  background: linear-gradient(180deg, #449df9, #166ce6);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .scene {
+    padding: 0;
+  }
+
+  .phone {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .summary-main {
+    font-size: 40px;
+  }
+
+  .sub-value {
+    font-size: 22px;
+  }
+}

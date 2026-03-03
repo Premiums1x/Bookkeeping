@@ -1,4 +1,4 @@
-# 日常账本（Ledger Vue）
+# 账单小屋（Ledger Vue）
 
 ## 项目概述
 

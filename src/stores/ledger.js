@@ -1,6 +1,23 @@
 import { computed, ref } from "vue";
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { createRecord, deleteRecord, fetchLedger, saveBudget, savePreferences, updateRecord } from "../api/ledger";
+import {
+  changePassword as changePasswordApi,
+  createAccount as createAccountApi,
+  createRecord,
+  deleteAccount as deleteAccountApi,
+  deleteRecord,
+  fetchAccounts,
+  fetchLedger,
+  fetchSession,
+  login as loginApi,
+  logout as logoutApi,
+  renameAccount as renameAccountApi,
+  register as registerApi,
+  saveBudget,
+  savePreferences,
+  switchAccount as switchAccountApi,
+  updateRecord
+} from "../api/ledger";
 import { formatMonthLabel, formatDay, isToday, isValidDate, isValidMonth, isoDate } from "../utils/date";
 
 function typeFilterName(type) {
@@ -32,11 +49,24 @@ export const useLedgerStore = defineStore("ledger", () => {
   const dateFilter = ref("today");
   const dateValue = ref("");
   const records = ref([]);
+  const accounts = ref([]);
+  const activeAccountId = ref("");
+  const authenticated = ref(false);
+  const sessionChecked = ref(false);
   const initialized = ref(false);
 
   const monthLabel = computed(() => formatMonthLabel(month.value));
   const typeFilterLabel = computed(() => typeFilterName(typeFilter.value));
   const dateFilterLabel = computed(() => dateFilterName(dateFilter.value, dateValue.value));
+  const accountCount = computed(() => accounts.value.length);
+  const currentAccountName = computed(() => {
+    const current = accounts.value.find((item) => item.id === activeAccountId.value);
+    return current?.name || "默认账户";
+  });
+  const currentUsername = computed(() => {
+    const current = accounts.value.find((item) => item.id === activeAccountId.value);
+    return current?.username || "";
+  });
 
   const monthRecords = computed(() => {
     return records.value
@@ -61,6 +91,57 @@ export const useLedgerStore = defineStore("ledger", () => {
   const budgetBarPercent = computed(() => {
     if (budget.value <= 0) return 0;
     return Math.min(100, Math.round((summaryExpense.value / budget.value) * 100));
+  });
+
+  const budgetUsageRate = computed(() => {
+    if (budget.value <= 0) return summaryExpense.value > 0 ? 1 : 0;
+    return summaryExpense.value / budget.value;
+  });
+
+  const budgetWarningLevel = computed(() => {
+    if (budget.value <= 0) return summaryExpense.value > 0 ? "warning" : "safe";
+    if (budgetUsageRate.value >= 1) return "danger";
+    if (budgetUsageRate.value >= 0.9) return "warning";
+    if (budgetUsageRate.value >= 0.75) return "attention";
+    return "safe";
+  });
+
+  const budgetWarningText = computed(() => {
+    if (budget.value <= 0) {
+      return summaryExpense.value > 0 ? "尚未设置预算，建议先在“账户”页设置每月预算。" : "未设置预算。";
+    }
+    if (budgetWarningLevel.value === "danger") {
+      const over = summaryExpense.value - budget.value;
+      return `预算已超支 ${Math.round(over)} 元，请控制后续支出。`;
+    }
+    if (budgetWarningLevel.value === "warning") {
+      return "预算使用已达 90%，进入高风险区间。";
+    }
+    if (budgetWarningLevel.value === "attention") {
+      return "预算使用已超过 75%，建议关注支出节奏。";
+    }
+    return "预算状态良好。";
+  });
+
+  const trendSeries = computed(() => {
+    const groupedByDate = new Map();
+    monthRecords.value.forEach((item) => {
+      const bucket = groupedByDate.get(item.date) || { income: 0, expense: 0 };
+      if (item.type === "income") {
+        bucket.income += Number(item.amount || 0);
+      } else {
+        bucket.expense += Number(item.amount || 0);
+      }
+      groupedByDate.set(item.date, bucket);
+    });
+
+    const dates = Array.from(groupedByDate.keys()).sort((a, b) => a.localeCompare(b));
+    const labels = dates.map((date) => date.slice(5));
+    const income = dates.map((date) => groupedByDate.get(date).income);
+    const expense = dates.map((date) => groupedByDate.get(date).expense);
+    const net = dates.map((date, index) => income[index] - expense[index]);
+
+    return { dates, labels, income, expense, net };
   });
 
   const recordsAfterFilter = computed(() => {
@@ -122,16 +203,103 @@ export const useLedgerStore = defineStore("ledger", () => {
       }));
   });
 
-  async function initialize() {
-    if (initialized.value) return;
-    const snapshot = await fetchLedger();
+  function resetLedgerState() {
+    month.value = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+    budget.value = 7000;
+    typeFilter.value = "all";
+    dateFilter.value = "today";
+    dateValue.value = "";
+    records.value = [];
+    accounts.value = [];
+    activeAccountId.value = "";
+    initialized.value = false;
+  }
+
+  function applySnapshot(snapshot) {
     month.value = snapshot.month || month.value;
     budget.value = Number(snapshot.budget || 0);
     typeFilter.value = snapshot.typeFilter || "all";
-    dateFilter.value = "today";
-    dateValue.value = "";
+    dateFilter.value = snapshot.dateFilter || "today";
+    dateValue.value = dateFilter.value === "custom" ? String(snapshot.dateValue || "") : "";
     records.value = Array.isArray(snapshot.records) ? snapshot.records : [];
+    if (Array.isArray(snapshot.accounts)) {
+      accounts.value = snapshot.accounts;
+    }
+    activeAccountId.value = String(snapshot.activeAccountId || snapshot.accountId || activeAccountId.value || "");
+  }
+
+  async function refreshLedger() {
+    if (!authenticated.value) return null;
+    const snapshot = await fetchLedger();
+    applySnapshot(snapshot);
+    return snapshot;
+  }
+
+  async function refreshAccounts() {
+    const result = await fetchAccounts();
+    accounts.value = Array.isArray(result.accounts) ? result.accounts : [];
+    activeAccountId.value = String(result.activeAccountId || activeAccountId.value || "");
+  }
+
+  async function initialize() {
+    if (initialized.value) return;
+    if (!authenticated.value) throw new Error("请先登录。");
+    await refreshLedger();
     initialized.value = true;
+  }
+
+  async function ensureSession() {
+    if (sessionChecked.value) return authenticated.value;
+    const session = await fetchSession();
+    authenticated.value = Boolean(session?.authenticated);
+    sessionChecked.value = true;
+    if (!authenticated.value) {
+      resetLedgerState();
+      return false;
+    }
+    await initialize();
+    return true;
+  }
+
+  async function login(payload) {
+    const username = String(payload?.username || "").trim().toLowerCase();
+    const password = String(payload?.password || "");
+    if (!username) throw new Error("请输入账号。");
+    if (!password) throw new Error("请输入密码。");
+    const snapshot = await loginApi({ username, password });
+    authenticated.value = true;
+    sessionChecked.value = true;
+    applySnapshot(snapshot);
+    initialized.value = true;
+  }
+
+  async function register(payload) {
+    const name = String(payload?.name || "").trim().slice(0, 20);
+    const username = String(payload?.username || "").trim().toLowerCase();
+    const password = String(payload?.password || "");
+    if (!name) throw new Error("请输入账户名称。");
+    if (!username) throw new Error("请输入账号。");
+    if (password.length < 6) throw new Error("密码至少 6 位。");
+    const snapshot = await registerApi({ name, username, password });
+    authenticated.value = true;
+    sessionChecked.value = true;
+    applySnapshot(snapshot);
+    initialized.value = true;
+  }
+
+  async function logout() {
+    await logoutApi();
+    authenticated.value = false;
+    sessionChecked.value = true;
+    resetLedgerState();
+  }
+
+  async function changePassword(oldPassword, newPassword) {
+    const oldValue = String(oldPassword || "");
+    const newValue = String(newPassword || "");
+    if (!oldValue) throw new Error("请输入旧密码。");
+    if (newValue.length < 6) throw new Error("新密码至少 6 位。");
+    await changePasswordApi({ oldPassword: oldValue, newPassword: newValue });
   }
 
   async function updatePreferences(payload) {
@@ -224,6 +392,43 @@ export const useLedgerStore = defineStore("ledger", () => {
     records.value = records.value.filter((item) => String(item.id) !== String(id));
   }
 
+  async function createAccount(payload) {
+    const name = String(payload?.name || "").trim().slice(0, 20);
+    const username = String(payload?.username || "").trim().toLowerCase();
+    const password = String(payload?.password || "");
+    if (!name) throw new Error("账户名称不能为空。");
+    if (!username) throw new Error("账号不能为空。");
+    if (password.length < 6) throw new Error("密码至少 6 位。");
+    const snapshot = await createAccountApi({ name, username, password });
+    authenticated.value = true;
+    applySnapshot(snapshot);
+    initialized.value = true;
+  }
+
+  async function renameAccount(id, name) {
+    if (!id) throw new Error("缺少账户 ID。");
+    const value = String(name || "").trim().slice(0, 20);
+    if (!value) throw new Error("账户名称不能为空。");
+    await renameAccountApi(id, { name: value });
+    await refreshAccounts();
+  }
+
+  async function removeAccount(id) {
+    if (!id) throw new Error("缺少账户 ID。");
+    const snapshot = await deleteAccountApi(id);
+    applySnapshot(snapshot);
+  }
+
+  async function setActiveAccount(id, password) {
+    if (!id) throw new Error("缺少账户 ID。");
+    const secret = String(password || "");
+    if (!secret) throw new Error("切换账户需要输入密码。");
+    const snapshot = await switchAccountApi({ accountId: id, password: secret });
+    authenticated.value = true;
+    applySnapshot(snapshot);
+    initialized.value = true;
+  }
+
   return {
     month,
     budget,
@@ -231,25 +436,46 @@ export const useLedgerStore = defineStore("ledger", () => {
     dateFilter,
     dateValue,
     records,
+    accounts,
+    activeAccountId,
+    authenticated,
+    sessionChecked,
     initialized,
     monthLabel,
     typeFilterLabel,
     dateFilterLabel,
+    accountCount,
+    currentAccountName,
+    currentUsername,
     monthRecords,
     summaryIncome,
     summaryExpense,
     summaryRemain,
     budgetBarPercent,
+    budgetUsageRate,
+    budgetWarningLevel,
+    budgetWarningText,
     groupedRecords,
     statsItems,
+    trendSeries,
+    ensureSession,
+    login,
+    register,
+    logout,
+    changePassword,
     initialize,
+    refreshLedger,
     setMonthFromInput,
     setDateFilterFromInput,
     setTypeFilter,
     setBudget,
     addEntry,
     updateEntry,
-    removeEntry
+    removeEntry,
+    createAccount,
+    renameAccount,
+    removeAccount,
+    setActiveAccount
   };
 });
 

@@ -13,6 +13,7 @@
       </div>
     </div>
     <el-progress :percentage="store.budgetBarPercent" :show-text="false" :stroke-width="8" />
+    <p :class="['summary-warning', `level-${store.budgetWarningLevel}`]">{{ store.budgetWarningText }}</p>
   </section>
 </template>
 

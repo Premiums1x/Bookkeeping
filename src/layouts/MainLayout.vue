@@ -52,7 +52,7 @@
         <el-button class="tab-item" :class="{ active: isActive('/stats') }" @click="go('/stats')">统计</el-button>
         <el-button class="add-item" @click="entryVisible = true">+</el-button>
         <el-button class="tab-item" :class="{ active: isActive('/account') }" @click="go('/account')">账户</el-button>
-        <el-button class="tab-item" disabled>我的</el-button>
+        <el-button class="tab-item" :class="{ active: isActive('/me') }" @click="go('/me')">我的</el-button>
       </nav>
     </section>
   </main>

@@ -18,6 +18,38 @@ body {
   background: radial-gradient(circle at 16% 0%, #fff 0%, var(--bg-a) 45%, var(--bg-b) 100%);
 }
 
+.auth-scene {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.auth-card {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 16px 36px rgba(20, 33, 58, 0.14);
+}
+
+.auth-card h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.auth-subtitle {
+  margin: 8px 0 12px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.auth-hint {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
 .scene {
   min-height: 100vh;
   display: grid;
@@ -155,6 +187,28 @@ body {
   font-weight: 650;
 }
 
+.summary-warning {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.summary-warning.level-safe {
+  color: #0f9d58;
+}
+
+.summary-warning.level-attention {
+  color: #2563eb;
+}
+
+.summary-warning.level-warning {
+  color: #d97706;
+}
+
+.summary-warning.level-danger {
+  color: #dc2626;
+}
+
 .content {
   flex: 1;
   min-height: 0;
@@ -277,9 +331,99 @@ body {
 }
 
 .stats-wrap h2,
-.account-wrap h2 {
+.account-wrap h2,
+.me-wrap h2 {
   margin: 2px 0 10px;
   font-size: 18px;
+}
+
+.account-card {
+  margin-bottom: 12px;
+}
+
+.account-create {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.account-list {
+  display: grid;
+  gap: 8px;
+}
+
+.account-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5eaf3;
+  border-radius: 12px;
+  background: #f9fbff;
+}
+
+.account-meta {
+  min-width: 0;
+}
+
+.account-meta strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.account-meta p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.security-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.me-line {
+  margin: 6px 0;
+}
+
+.me-tip-card {
+  margin-top: 12px;
+}
+
+.me-tip-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.me-tip-text {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.stats-wrap .el-alert {
+  margin-bottom: 12px;
+}
+
+.trend-card {
+  margin-bottom: 12px;
+}
+
+.trend-chart {
+  width: 100%;
+  height: 280px;
 }
 
 .stat-head {
@@ -379,5 +523,24 @@ body {
 
   .sub-value {
     font-size: 22px;
+  }
+
+  .trend-chart {
+    height: 240px;
+  }
+
+  .account-item {
+    grid-template-columns: 1fr;
+  }
+
+  .account-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .security-actions {
+    display: grid;
+    width: 100%;
+    gap: 8px;
   }
 }

@@ -1,5 +1,14 @@
 <template>
   <section class="stats-wrap">
+    <h2>预算预警</h2>
+    <el-alert :title="store.budgetWarningText" :type="budgetAlertType" :closable="false" show-icon />
+
+    <h2>收支趋势</h2>
+    <el-card shadow="never" class="trend-card">
+      <trend-chart v-if="store.trendSeries.labels.length" :trend="store.trendSeries" />
+      <el-empty v-else description="本月暂无可展示的趋势数据。" />
+    </el-card>
+
     <h2>分类支出</h2>
     <div v-if="store.statsItems.length" class="stats-list">
       <el-card v-for="item in store.statsItems" :key="item.category" shadow="never">
@@ -15,8 +24,17 @@
 </template>
 
 <script setup>
+import { computed, defineAsyncComponent } from "vue";
 import { useLedgerStore } from "../stores/ledger";
 import { formatCNY } from "../utils/format";
 
 const store = useLedgerStore();
+const TrendChart = defineAsyncComponent(() => import("../components/TrendChart.vue"));
+
+const budgetAlertType = computed(() => {
+  if (store.budgetWarningLevel === "danger") return "error";
+  if (store.budgetWarningLevel === "warning") return "warning";
+  if (store.budgetWarningLevel === "attention") return "info";
+  return "success";
+});
 </script>

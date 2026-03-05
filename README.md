@@ -1,4 +1,4 @@
-# 账单小屋（Ledger Vue）
+# 记账小屋（Ledger Vue）
 
 ## 项目概述
 

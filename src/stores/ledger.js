@@ -394,12 +394,8 @@ export const useLedgerStore = defineStore("ledger", () => {
 
   async function createAccount(payload) {
     const name = String(payload?.name || "").trim().slice(0, 20);
-    const username = String(payload?.username || "").trim().toLowerCase();
-    const password = String(payload?.password || "");
     if (!name) throw new Error("账户名称不能为空。");
-    if (!username) throw new Error("账号不能为空。");
-    if (password.length < 6) throw new Error("密码至少 6 位。");
-    const snapshot = await createAccountApi({ name, username, password });
+    const snapshot = await createAccountApi({ name });
     authenticated.value = true;
     applySnapshot(snapshot);
     initialized.value = true;
@@ -419,11 +415,9 @@ export const useLedgerStore = defineStore("ledger", () => {
     applySnapshot(snapshot);
   }
 
-  async function setActiveAccount(id, password) {
+  async function setActiveAccount(id) {
     if (!id) throw new Error("缺少账户 ID。");
-    const secret = String(password || "");
-    if (!secret) throw new Error("切换账户需要输入密码。");
-    const snapshot = await switchAccountApi({ accountId: id, password: secret });
+    const snapshot = await switchAccountApi({ accountId: id });
     authenticated.value = true;
     applySnapshot(snapshot);
     initialized.value = true;

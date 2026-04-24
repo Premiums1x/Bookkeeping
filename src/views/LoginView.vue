@@ -2,7 +2,15 @@
   <main class="auth-scene">
     <section class="auth-card">
       <h1>日常账本登录</h1>
-      <p class="auth-subtitle">每个账户拥有独立的账单、预算和统计数据</p>
+      <p class="auth-subtitle">每个用户可以管理多个独立账本，分别保存预算、账单和统计数据</p>
+      <el-alert
+        v-if="errorMessage"
+        class="auth-error"
+        :title="errorMessage"
+        type="error"
+        show-icon
+        :closable="false"
+      />
 
       <el-tabs v-model="mode">
         <el-tab-pane label="登录" name="login">
@@ -20,7 +28,7 @@
 
         <el-tab-pane label="注册" name="register">
           <el-form label-position="top" @submit.prevent>
-            <el-form-item label="账户名称">
+            <el-form-item label="默认账本名称">
               <el-input v-model.trim="registerForm.name" maxlength="20" placeholder="例如：小明账本" />
             </el-form-item>
             <el-form-item label="账号">
@@ -31,6 +39,7 @@
             </el-form-item>
           </el-form>
           <el-button type="primary" :loading="submitting" style="width: 100%" @click="onRegister">注册并登录</el-button>
+          <p class="auth-hint">注册后会自动创建你的第一个默认账本</p>
         </el-tab-pane>
       </el-tabs>
     </section>
@@ -40,13 +49,13 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
 import { useLedgerStore } from "../stores/ledger";
 
 const router = useRouter();
 const store = useLedgerStore();
 const mode = ref("login");
 const submitting = ref(false);
+const errorMessage = ref("");
 
 const loginForm = reactive({
   username: "",
@@ -61,13 +70,14 @@ const registerForm = reactive({
 
 async function onLogin() {
   if (submitting.value) return;
+  errorMessage.value = "";
   submitting.value = true;
   try {
     await store.login(loginForm);
     ElMessage.success("登录成功");
     router.replace("/records");
   } catch (error) {
-    ElMessage.error(error.message || "登录失败");
+    showAuthError(error, "登录失败");
   } finally {
     submitting.value = false;
   }
@@ -75,15 +85,21 @@ async function onLogin() {
 
 async function onRegister() {
   if (submitting.value) return;
+  errorMessage.value = "";
   submitting.value = true;
   try {
     await store.register(registerForm);
     ElMessage.success("注册成功，已自动登录");
     router.replace("/records");
   } catch (error) {
-    ElMessage.error(error.message || "注册失败");
+    showAuthError(error, "注册失败");
   } finally {
     submitting.value = false;
   }
+}
+
+function showAuthError(error, fallback) {
+  const message = error?.message || fallback;
+  errorMessage.value = message;
 }
 </script>

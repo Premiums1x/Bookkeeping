@@ -1,0 +1,29 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+
+spring:
+  application:
+    name: ledger-backend
+  config:
+    import: optional:classpath:application-local.yml
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${LEDGER_DB_URL:jdbc:mysql://localhost:3306/ledger_app?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${LEDGER_DB_USERNAME:ledger_user}
+    password: ${LEDGER_DB_PASSWORD:ledger_password}
+  sql:
+    init:
+      mode: never
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+ledger:
+  cors:
+    allowed-origin: ${LEDGER_CORS_ALLOWED_ORIGIN:http://localhost:5173}

@@ -1,10 +1,9 @@
 import axios from "axios";
-import { mockLedgerAdapter } from "./mockLedgerBackend";
 
 const http = axios.create({
   baseURL: "/api",
   timeout: 8000,
-  adapter: mockLedgerAdapter
+  withCredentials: true
 });
 
 http.interceptors.request.use((config) => {

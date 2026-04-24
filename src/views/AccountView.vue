@@ -1,16 +1,10 @@
 <template>
   <section class="account-wrap">
-    <h2>账户管理</h2>
+    <h2>账本管理</h2>
     <el-card shadow="never" class="account-card">
       <div class="account-create">
-        <el-input v-model.trim="newAccountName" maxlength="20" placeholder="账户名称，如：生活费账户" />
-        <el-input
-          v-model.trim="newAccountUsername"
-          maxlength="20"
-          placeholder="登录账号（3-20位字母数字下划线）"
-        />
-        <el-input v-model="newAccountPassword" type="password" show-password placeholder="登录密码（至少6位）" />
-        <el-button type="primary" :loading="creating" @click="onCreateAccount">新增账户</el-button>
+        <el-input v-model.trim="newAccountName" maxlength="20" placeholder="账本名称，如：生活费账本" />
+        <el-button type="primary" :loading="creating" @click="onCreateAccount">新增账本</el-button>
       </div>
 
       <div class="account-list">
@@ -18,17 +12,17 @@
           <div class="account-meta">
             <strong>{{ account.name }}</strong>
             <p>
-              账号 @{{ account.username }} · 账单 {{ account.recordsCount }} 条 · 预算 {{ formatCNY(account.budget) }} · 月份
+              账单 {{ account.recordsCount }} 条 · 预算 {{ formatCNY(account.budget) }} · 月份
               {{ account.month }}
             </p>
           </div>
 
           <div class="account-actions">
-            <el-tag v-if="account.id === store.activeAccountId" type="success" effect="plain">当前账户</el-tag>
+            <el-tag v-if="account.id === store.activeAccountId" type="success" effect="plain">当前账本</el-tag>
             <el-button v-else size="small" @click="onSwitch(account)">切换</el-button>
-            <el-button text size="small" @click="onRename(account)">重命名</el-button>
+            <el-button text size="small" @click="onRename(account)">重命名账本</el-button>
             <el-popconfirm
-              title="确认删除这个账户吗？该账户下账单会一起删除。"
+              title="确认删除这个账本吗？账本下的账单会一起删除。"
               confirm-button-text="删除"
               cancel-button-text="取消"
               @confirm="onDelete(account.id)"
@@ -53,7 +47,7 @@
         <el-button type="primary" :loading="savingBudget" @click="onSaveBudget">保存预算</el-button>
       </div>
       <p class="budget-hint">
-        当前账户：{{ store.currentAccountName }}（@{{ store.currentUsername }}） · 当前预算：{{ formatCNY(store.budget) }}
+        当前账本：{{ store.currentAccountName }} · 当前预算：{{ formatCNY(store.budget) }}
       </p>
     </el-card>
 
@@ -89,8 +83,6 @@ const savingBudget = ref(false);
 const creating = ref(false);
 const changingPassword = ref(false);
 const newAccountName = ref("");
-const newAccountUsername = ref("");
-const newAccountPassword = ref("");
 const oldPassword = ref("");
 const newPassword = ref("");
 
@@ -119,14 +111,10 @@ async function onCreateAccount() {
   creating.value = true;
   try {
     await store.createAccount({
-      name: newAccountName.value,
-      username: newAccountUsername.value,
-      password: newAccountPassword.value
+      name: newAccountName.value
     });
     newAccountName.value = "";
-    newAccountUsername.value = "";
-    newAccountPassword.value = "";
-    ElMessage.success("账户已创建并登录");
+    ElMessage.success("账本已创建并切换");
   } catch (error) {
     ElMessage.error(error.message || "创建失败");
   } finally {
@@ -136,30 +124,23 @@ async function onCreateAccount() {
 
 async function onSwitch(account) {
   try {
-    const { value } = await ElMessageBox.prompt(`请输入账户 @${account.username} 的密码`, "切换账户验证", {
-      inputType: "password",
-      inputPlaceholder: "请输入密码",
-      inputPattern: /^.{1,}$/,
-      inputErrorMessage: "请输入密码"
-    });
-    await store.setActiveAccount(account.id, value);
-    ElMessage.success("已切换账户");
+    await store.setActiveAccount(account.id);
+    ElMessage.success("已切换账本");
   } catch (error) {
-    if (error === "cancel" || error === "close" || error?.action === "cancel" || error?.action === "close") return;
     ElMessage.error(error.message || "切换失败");
   }
 }
 
 async function onRename(account) {
   try {
-    const { value } = await ElMessageBox.prompt("请输入新的账户名称", "重命名账户", {
+    const { value } = await ElMessageBox.prompt("请输入新的账本名称", "重命名账本", {
       inputValue: account.name,
       inputPlaceholder: "最多 20 字",
       inputPattern: /^.{1,20}$/,
       inputErrorMessage: "请输入 1-20 字名称"
     });
     await store.renameAccount(account.id, value);
-    ElMessage.success("账户名称已更新");
+    ElMessage.success("账本名称已更新");
   } catch (error) {
     if (error === "cancel" || error === "close" || error?.action === "cancel" || error?.action === "close") return;
     ElMessage.error(error.message || "重命名失败");
@@ -169,7 +150,7 @@ async function onRename(account) {
 async function onDelete(id) {
   try {
     await store.removeAccount(id);
-    ElMessage.success("账户已删除");
+    ElMessage.success("账本已删除");
   } catch (error) {
     ElMessage.error(error.message || "删除失败");
   }

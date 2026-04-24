@@ -9,5 +9,13 @@ export default defineConfig({
     Components({
       resolvers: [ElementPlusResolver({ importStyle: "css" })]
     })
-  ]
+  ],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true
+      }
+    }
+  }
 });

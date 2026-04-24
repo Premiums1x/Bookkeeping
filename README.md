@@ -1,17 +1,25 @@
 # 账单小屋（Bookkeeping）
 
-一个面向个人记账场景的 Vue 3 应用，提供从登录到账单管理、预算控制、统计分析的完整闭环体验。  
-系统以“账户隔离、操作直观、反馈清晰”为核心设计目标，支持多账户独立数据存储与本地会话验证。
+一个面向个人记账场景的前后端分离应用，提供从登录到账本管理、预算控制、账单 CRUD、统计分析的完整闭环体验。
+
+当前版本已接入真实后端：前端使用 Vue 3，后端使用 Java 17 + Spring Boot 3 + MyBatis，并通过 MySQL 持久化用户、账本和账单数据。
 
 ## 功能特性
 
-### 账户与登录
+### 登录与用户
 
 - 账号密码登录、注册、登出
-- 本地会话校验（路由守卫拦截未登录访问）
+- Session Cookie 会话校验
+- 路由守卫拦截未登录访问
 - 支持修改密码
-- 支持多账户管理（新增、重命名、删除、切换）
-- 账户数据完全隔离：预算、筛选条件、账单记录互不影响
+- 密码使用 BCrypt 哈希后入库
+
+### 账本管理
+
+- 每个登录用户可拥有多个账本
+- 支持新增、重命名、删除、切换账本
+- 每个账本拥有独立预算、筛选偏好和账单记录
+- 删除账本时会同步删除该账本下的账单记录
 
 ### 账单管理
 
@@ -32,45 +40,107 @@
 ### 预算预警
 
 - 预算使用进度可视化
-- 多级预警策略：
-  - `>= 75%` 关注提示
-  - `>= 90%` 高风险预警
-  - `>= 100%` 超支告警
+- 多级预警策略：`>= 75%` 关注提示、`>= 90%` 高风险预警、`>= 100%` 超支告警
 
 ## 技术栈
 
-- Vue 3 + Composition API
-- Vite 5
-- Vue Router 4
-- Pinia
-- Axios
-- Element Plus（按需引入）
-- ECharts（趋势图）
-
-## 工程与架构
-
-- 视图层、状态层、接口层分离
-- 路由懒加载与异步组件加载
-- 统一请求拦截与错误处理
-- Mock API Adapter 模拟后端协议
-- localStorage 持久化数据与会话状态
+- 前端：Vue 3、Vite 5、Vue Router 4、Pinia、Axios、Element Plus、ECharts
+- 后端：Java 17、Spring Boot 3、Spring Web、Spring Validation、MyBatis、MySQL Connector/J
+- 数据库：MySQL 8.x
+- 认证：Spring Session Cookie + 服务端 HttpSession
+- 密码：BCrypt 哈希
 
 ## 目录结构
 
 ```text
+backend/
+  pom.xml
+  sql/schema.sql
+  src/main/java/com/bookkeeping/ledger/
+    controller/    # HTTP API
+    service/       # 业务逻辑
+    mapper/        # MyBatis SQL 映射
+    model/         # 数据库实体
+    dto/           # 请求与响应对象
+    config/        # Web、密码、拦截器配置
+  src/main/resources/
+    application.yml
+    application-local.example.yml
+
 src/
-  api/          # 接口定义、http 实例、mock backend
-  components/   # 复用组件（汇总卡片、弹窗、趋势图）
+  api/          # Axios 实例与接口函数
+  components/   # 复用组件
   layouts/      # 主布局
-  router/       # 路由配置与页面拆分
-  stores/       # Pinia 业务状态（认证、账本、统计）
+  router/       # 路由配置
+  stores/       # Pinia 状态
   utils/        # 日期/金额工具
-  views/        # 登录、账单、统计、账户、我的
+  views/        # 登录、账单、统计、账本、我的
 ```
 
-## Mock API
+## MySQL 配置
 
-当前接口统一走 `/api/*`，由本地 Mock Adapter 处理：
+先创建数据库表：
+
+```bash
+mysql -u root -p < backend/sql/schema.sql
+```
+
+项目中已经准备好本地占位配置 `backend/src/main/resources/application-local.yml`，你只需要填写自己的 MySQL 用户名和密码：
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/ledger_app?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: YOUR_MYSQL_USERNAME
+    password: YOUR_MYSQL_PASSWORD
+```
+
+`application-local.yml` 已被 `.gitignore` 忽略，不会提交到仓库；`application-local.example.yml` 作为模板会保留在仓库中。
+
+## 本地运行
+
+启动后端：
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+启动前端：
+
+```bash
+npm install
+npm run dev
+```
+
+开发期前端请求 `/api/*` 会通过 Vite proxy 转发到 `http://localhost:8080`。
+
+## 构建与检查
+
+前端构建：
+
+```bash
+npm run build
+```
+
+后端测试：
+
+```bash
+cd backend
+mvn test
+```
+
+## API 概览
+
+所有接口统一以 `/api` 开头，由 Spring Boot 后端提供。响应格式保持统一：
+
+```json
+{ "success": true, "data": {} }
+```
+
+```json
+{ "success": false, "message": "错误信息" }
+```
 
 ### 认证
 
@@ -80,17 +150,17 @@ src/
 - `POST /api/auth/logout`：退出登录
 - `PUT /api/auth/password`：修改密码
 
-### 账户
-
-- `GET /api/accounts`：获取账户列表
-- `POST /api/accounts`：创建账户（含账号密码）
-- `PUT /api/accounts/:id`：重命名账户
-- `DELETE /api/accounts/:id`：删除账户
-- `PUT /api/accounts/active`：校验密码并切换账户
-
 ### 账本
 
-- `GET /api/ledger`：获取当前账户账本快照
+- `GET /api/accounts`：获取当前用户的账本列表
+- `POST /api/accounts`：创建账本
+- `PUT /api/accounts/:id`：重命名账本
+- `DELETE /api/accounts/:id`：删除账本
+- `PUT /api/accounts/active`：切换当前账本
+- `GET /api/ledger`：获取当前账本快照
+
+### 账单与偏好
+
 - `GET /api/records`：查询账单
 - `POST /api/records`：新增账单
 - `PUT /api/records/:id`：更新账单
@@ -98,21 +168,8 @@ src/
 - `PUT /api/budget`：更新预算
 - `PUT /api/preferences`：更新筛选偏好
 
-## 本地运行
+## 初始化账号
 
-```bash
-npm install
-npm run dev
-```
+当前版本不再内置浏览器 localStorage 演示账号。你可以直接在登录页注册账号，系统会自动为新用户创建第一个默认账本。
 
-## 构建
-
-```bash
-npm run build
-npm run preview
-```
-
-## 体验账号
-
-- 账号：`demo`
-- 密码：`123456`
+更多后端改造细节见 [真实后端改造说明.md](./真实后端改造说明.md)。
